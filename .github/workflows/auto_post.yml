@@ -1,0 +1,60 @@
+name: Auto Post to X
+
+on:
+  schedule:
+    # JST 08:00 = UTC 23:00 (前日)
+    - cron: '50 22 * * *'
+    # JST 10:00 = UTC 01:00
+    - cron: '50 0 * * *'
+    # JST 12:30 = UTC 03:30
+    - cron: '20 3 * * *'
+    # JST 15:00 = UTC 06:00
+    - cron: '50 5 * * *'
+    # JST 18:00 = UTC 09:00
+    - cron: '50 8 * * *'
+    # JST 20:00 = UTC 11:00
+    - cron: '50 10 * * *'
+    # JST 21:30 = UTC 12:30
+    - cron: '20 12 * * *'
+  workflow_dispatch:
+    inputs:
+      time_slot:
+        description: '投稿時間帯 (例: 08:00, 12:30)'
+        required: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: pip install tweepy requests
+
+      - name: Run auto post
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TZ: Asia/Tokyo
+        run: |
+          if [ -n "${{ github.event.inputs.time_slot }}" ]; then
+            python auto_post.py "${{ github.event.inputs.time_slot }}"
+          else
+            python auto_post.py
+          fi
+
+      - name: Commit queue updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add post_queue.json
+          git diff --staged --quiet || git commit -m "Update post queue after auto post"
+          git push
