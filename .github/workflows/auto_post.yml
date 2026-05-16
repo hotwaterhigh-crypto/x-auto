@@ -2,8 +2,6 @@ name: Auto Post to X
 
 on:
   schedule:
-    # JST 08:00 = UTC 23:00 (前日)
-    - cron: '50 22 * * *'
     # JST 10:00 = UTC 01:00
     - cron: '50 0 * * *'
     # JST 12:30 = UTC 03:30
@@ -12,14 +10,12 @@ on:
     - cron: '50 5 * * *'
     # JST 18:00 = UTC 09:00
     - cron: '50 8 * * *'
-    # JST 20:00 = UTC 11:00
-    - cron: '50 10 * * *'
-    # JST 21:30 = UTC 12:30
-    - cron: '20 12 * * *'
+    # JST 21:00 = UTC 12:00
+    - cron: '50 11 * * *'
   workflow_dispatch:
     inputs:
       time_slot:
-        description: '投稿時間帯 (例: 08:00, 12:30)'
+        description: '投稿時間帯 (例: 10:00, 12:30)'
         required: false
 
 permissions:

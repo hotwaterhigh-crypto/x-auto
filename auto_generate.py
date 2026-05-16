@@ -1,15 +1,18 @@
 """
 投稿キューが少なくなったら自動で新しい投稿を生成するスクリプト
 GitHub Actionsから毎日1回実行される
+
+v2: 1日5投稿に最適化。リスト系・リアルレポ紹介を強化。
 """
 import json
 import os
 import subprocess
 import tempfile
+import tweepy
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 QUEUE_FILE = "post_queue.json"
-MIN_PENDING = 7  # pending がこの数以下なら補充
+MIN_PENDING = 5  # pending がこの数以下なら補充
 
 
 def load_queue():
@@ -61,8 +64,83 @@ def call_anthropic(system_prompt, user_prompt):
         os.unlink(tmp.name)
 
 
-def generate_day_posts(day_number):
-    """1日7本の投稿を生成する"""
+def search_real_reports():
+    """提携クリニックの患者投稿をX APIで検索してリアルレポ紹介用の投稿を生成"""
+    try:
+        client = tweepy.Client(
+            consumer_key=os.environ.get("X_API_KEY", ""),
+            consumer_secret=os.environ.get("X_API_SECRET", ""),
+            access_token=os.environ.get("X_ACCESS_TOKEN", ""),
+            access_token_secret=os.environ.get("X_ACCESS_TOKEN_SECRET", ""),
+        )
+
+        clinics = [
+            ("DA美容外科", "DA美容外科"),
+            ("ドリーム整形外科", "ドリーム整形外科"),
+            ("NOTE美容外科", "NOTE美容外科 OR ノート美容外科"),
+            ("現代美学美容整形外科", "現代美学美容整形外科"),
+            ("ベリーグッド美容外科", "ベリーグッド美容外科 OR ベリーグッド美容"),
+        ]
+
+        me = client.get_me()
+        my_id = me.data.id
+        found = []
+
+        for clinic_name, query in clinics:
+            try:
+                tweets = client.search_recent_tweets(
+                    query=f"{query} -is:retweet lang:ja",
+                    max_results=10,
+                    tweet_fields=["public_metrics", "created_at", "author_id"],
+                    user_auth=True,
+                )
+                if tweets.data:
+                    for t in tweets.data:
+                        # 自分の投稿は除外
+                        if str(t.author_id) == str(my_id):
+                            continue
+                        pm = t.public_metrics
+                        # 体験談っぽい投稿を優先（術後、経過、DT、ダウンタイムなど）
+                        keywords = ["術後", "経過", "DT", "ダウンタイム", "手術", "症例", "レポ", "ビフォー", "カウンセリング"]
+                        if any(kw in t.text for kw in keywords):
+                            found.append({
+                                "clinic": clinic_name,
+                                "tweet_id": str(t.id),
+                                "text_preview": t.text[:60],
+                                "imp": pm.get("impression_count", 0),
+                                "likes": pm["like_count"],
+                            })
+            except Exception as e:
+                print(f"  {clinic_name}検索エラー: {e}")
+
+        # IMP順にソートして上位を返す
+        found.sort(key=lambda x: x["imp"], reverse=True)
+        return found[:5]
+
+    except Exception as e:
+        print(f"リアルレポ検索エラー: {e}")
+        return []
+
+
+def generate_real_report_post(report):
+    """リアルレポ紹介の投稿テキストを生成"""
+    tweet_url = f"https://x.com/i/status/{report['tweet_id']}"
+    text = f"""【渡韓整形リアルレポ紹介】
+
+{report['clinic']}で施術を受けられた方のリアルな投稿をご紹介します✨
+
+実際の体験談や経過写真は、検討中の方にとって何よりも参考になりますよね
+
+気になる方はぜひチェックしてみてください💕
+
+#韓国整形 #渡韓整形 #韓国美容整形navi #韓国美容
+
+{tweet_url}"""
+    return text
+
+
+def generate_day_posts(day_number, real_reports=None):
+    """1日5本の投稿を生成する"""
 
     system = """あなたは韓国美容整形navi（@k_seikeinavi）のSNS運用担当です。
 ジャンル: 韓国美容整形の渡韓サポート・情報メディア
@@ -76,38 +154,33 @@ def generate_day_posts(day_number):
 ・院長名にはクリニック名を必ず併記
 ・効果効能の断定表現禁止。医療広告ガイドライン準拠
 ・各投稿200字以内
+・冒頭1行で「自分のことだ」とスクロールを止めるフック
 ・投稿文のみ出力。説明や補足は不要。"""
 
-    user = f"""以下の7カテゴリで1本ずつ、合計7本の投稿を生成してください。Day{day_number}の投稿です。
+    user = f"""以下の4カテゴリで1本ずつ、合計4本の投稿を生成してください。Day{day_number}の投稿です。
+前回と内容・切り口が被らないように必ず新しいテーマにしてください。
 
-1. 【08:00 輪郭・両顎情報系】専門的な施術解説。輪郭3点、両顎、エラ、頬骨、Vラインなどのテーマから1つ選んで解説。
-2. 【10:00 改善版】問いかけ系・体験談系・保存リスト系のいずれか。「コメントで教えて」「保存して」のCTA付き。URLなし。
-3. 【12:30 YouTube宣伝】韓国美容整形naviのYouTubeチャンネル宣伝。末尾にURL: https://www.youtube.com/@k_seikeinavi
-4. 【15:00 改善版】問いかけ系・体験談系・保存リスト系のいずれか（10:00と違う種類）。URLなし。
-5. 【18:00 YouTubeショート宣伝】ショート動画宣伝。末尾にURL: https://www.youtube.com/@k_seikeinavi/shorts
-6. 【20:00 コラム宣伝】韓国美容整形naviのコラム記事宣伝。末尾にURL: https://kankoku-seikei-navi.com/column/
-7. 【21:30 日本相談会】日本で開催する来日相談会の魅力訴求。末尾にURL: https://kankoku-seikei-navi.com/event/
+1. 【10:00 改善版リスト系】「保存必須」「知らないと損」系の保存したくなるリスト投稿。具体的な数字・チェック項目を入れる。「保存して」「コメントで教えて」のCTA付き。URLなし。
+2. 【12:30 YouTube/ショート宣伝】韓国美容整形naviのYouTubeチャンネルまたはショート宣伝。動画の中身が気になる切り口で。末尾にURL: https://www.youtube.com/@k_seikeinavi
+3. 【18:00 コラム宣伝】韓国美容整形naviのコラム記事宣伝。コラムの核心をちら見せして続きが読みたくなる構成。末尾にURL: https://kankoku-seikei-navi.com/column/
+4. 【21:00 日本相談会 or 体験談】日本相談会の魅力訴求か、相談に来た方の体験談。相談会URLは末尾に: https://kankoku-seikei-navi.com/event/
 
 全投稿の末尾にハッシュタグを付けてください: #韓国整形 #渡韓整形 #韓国美容整形navi ＋内容に合ったタグ1〜2個（#輪郭整形 #輪郭3点 #鼻整形 #両顎手術 #小顔整形 #韓国美容 など）
 
 出力フォーマット（厳守）:
-各投稿を以下のJSON形式で出力してください。JSON配列のみ出力。説明不要。
+JSON配列のみ出力。説明不要。
 
 [
-  {{"time": "08:00", "type": "info_contour", "text": "投稿本文"}},
-  {{"time": "10:00", "type": "engagement", "text": "投稿本文"}},
+  {{"time": "10:00", "type": "engagement_list", "text": "投稿本文"}},
   {{"time": "12:30", "type": "youtube", "text": "投稿本文"}},
-  {{"time": "15:00", "type": "engagement", "text": "投稿本文"}},
-  {{"time": "18:00", "type": "youtube_short", "text": "投稿本文"}},
-  {{"time": "20:00", "type": "column", "text": "投稿本文"}},
-  {{"time": "21:30", "type": "event", "text": "投稿本文"}}
+  {{"time": "18:00", "type": "column", "text": "投稿本文"}},
+  {{"time": "21:00", "type": "event_story", "text": "投稿本文"}}
 ]"""
 
     result = call_anthropic(system, user)
     if not result:
         return []
 
-    # JSON部分を抽出
     try:
         start = result.index("[")
         end = result.rindex("]") + 1
@@ -126,6 +199,38 @@ def generate_day_posts(day_number):
             "status": "pending",
             "text": p["text"],
         })
+
+    # 15:00にリアルレポ紹介を追加
+    if real_reports:
+        # day_numberに応じてレポートを選択（ローテーション）
+        idx = (day_number - 1) % len(real_reports)
+        report = real_reports[idx]
+        posts.append({
+            "day": day_number,
+            "time": "15:00",
+            "type": "real_report",
+            "status": "pending",
+            "text": generate_real_report_post(report),
+        })
+    else:
+        # リアルレポが見つからない場合は問いかけ系で埋める
+        fallback = call_anthropic(system, f"""Day{day_number}の15:00用に問いかけ系の投稿を1本作れ。
+「あなたはどっち？」「コメントで教えて」系の双方向投稿。URLなし。200字以内。
+ハッシュタグ付き: #韓国整形 #渡韓整形 #韓国美容整形navi +内容別タグ
+投稿文のみ出力。""")
+        if fallback:
+            posts.append({
+                "day": day_number,
+                "time": "15:00",
+                "type": "engagement_question",
+                "status": "pending",
+                "text": fallback,
+            })
+
+    # 時間順にソート
+    time_order = {"10:00": 0, "12:30": 1, "15:00": 2, "18:00": 3, "21:00": 4}
+    posts.sort(key=lambda p: time_order.get(p["time"], 9))
+
     return posts
 
 
@@ -140,12 +245,17 @@ def main():
 
     print(f"pending {len(pending)}件 <= {MIN_PENDING}件 → 3日分を自動生成")
 
+    # リアルレポ用の患者投稿を検索
+    print("リアルレポ用の投稿を検索中...")
+    real_reports = search_real_reports()
+    print(f"  {len(real_reports)}件の候補を発見")
+
     next_day = get_next_day(posts)
     generated = 0
 
     for d in range(next_day, next_day + 3):
         print(f"Day{d} を生成中...")
-        new_posts = generate_day_posts(d)
+        new_posts = generate_day_posts(d, real_reports)
         if new_posts:
             posts.extend(new_posts)
             generated += len(new_posts)
