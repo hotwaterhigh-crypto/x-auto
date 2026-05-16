@@ -2,13 +2,14 @@
 X自動投稿パイプライン - 設定ファイル
 """
 
-X_API_KEY = "MeN6XDKZN03Vc8rupq5Y3g3PO"
-X_API_SECRET = "96XlIbKwu50Y3JOcKIlR3JQLfTsocIF8WN4puwIXgXQbMKuDDm"
-X_ACCESS_TOKEN = "1540239181309300736-hEeIY1QDCk5W50eAXVRwR9pxSok1m2"
-X_ACCESS_TOKEN_SECRET = "XKCxiMl3whs094KvwvC0B3iJp0aZ52DSCCcUX6dvNtitx"
+import os
+X_API_KEY = os.environ.get("X_API_KEY", "")
+X_API_SECRET = os.environ.get("X_API_SECRET", "")
+X_ACCESS_TOKEN = os.environ.get("X_ACCESS_TOKEN", "")
+X_ACCESS_TOKEN_SECRET = os.environ.get("X_ACCESS_TOKEN_SECRET", "")
 
 AI_PROVIDER = "anthropic"
-ANTHROPIC_API_KEY = "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"
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 
 POSTS_PER_DAY = 3
 
