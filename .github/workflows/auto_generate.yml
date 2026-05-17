@@ -1,8 +1,8 @@
-name: Auto Generate Posts
+name: Auto Generate Posts & Track Followers
 
 on:
   schedule:
-    # 毎日JST 6:00 (UTC 21:00前日) に実行してキューを補充
+    # 毎日JST 6:00 (UTC 21:00前日) に実行
     - cron: '0 21 * * *'
   workflow_dispatch:
 
@@ -23,16 +23,43 @@ jobs:
       - name: Install dependencies
         run: pip install tweepy requests
 
+      - name: Record follower count
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          TZ: Asia/Tokyo
+        run: |
+          python -c "
+          import tweepy, os
+          from follower_tracker import record_followers
+          client = tweepy.Client(
+              consumer_key=os.environ['X_API_KEY'],
+              consumer_secret=os.environ['X_API_SECRET'],
+              access_token=os.environ['X_ACCESS_TOKEN'],
+              access_token_secret=os.environ['X_ACCESS_TOKEN_SECRET'],
+          )
+          me = client.get_me(user_fields=['public_metrics'])
+          count = me.data.public_metrics['followers_count']
+          record_followers(count)
+          print(f'フォロワー記録: {count}人')
+          "
+
       - name: Generate posts if needed
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
           TZ: Asia/Tokyo
         run: python auto_generate.py
 
-      - name: Commit new posts
+      - name: Commit updates
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add post_queue.json
-          git diff --staged --quiet || git commit -m "Auto-generate: replenish post queue"
+          git add post_queue.json follower_log.json
+          git diff --staged --quiet || git commit -m "Auto-generate: replenish queue & record followers"
           git push
