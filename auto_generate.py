@@ -2,7 +2,7 @@
 投稿キューが少なくなったら自動で新しい投稿を生成するスクリプト
 GitHub Actionsから毎日1回実行される
 
-v2: 1日5投稿に最適化。リスト系・リアルレポ紹介を強化。
+v3: PDCA反映。体験談系を強化（ENG率1.4%で最高）、リアルレポ紹介継続（IMP169で安定）、問いかけ系継続（IMP191）。リスト系は弱いので体験談に置き換え。
 """
 import json
 import os
@@ -160,10 +160,15 @@ def generate_day_posts(day_number, real_reports=None):
     user = f"""以下の4カテゴリで1本ずつ、合計4本の投稿を生成してください。Day{day_number}の投稿です。
 前回と内容・切り口が被らないように必ず新しいテーマにしてください。
 
-1. 【10:00 改善版リスト系】「保存必須」「知らないと損」系の保存したくなるリスト投稿。具体的な数字・チェック項目を入れる。「保存して」「コメントで教えて」のCTA付き。URLなし。
-2. 【12:30 YouTube/ショート宣伝】韓国美容整形naviのYouTubeチャンネルまたはショート宣伝。動画の中身が気になる切り口で。末尾にURL: https://www.youtube.com/@k_seikeinavi
+1. 【10:00 体験談系】相談会に来た方、渡韓した方、手術を受けた方のリアルなエピソード。匿名で「先日の相談会で〜」「渡韓された方が〜」のように語る。感情の変化（不安→安心、迷い→決断）を描く。共感を呼ぶ内容にする。「コメントで教えて」「あなたはどうでしたか？」のCTA付き。URLなし。
+2. 【12:30 YouTube/ショート宣伝】韓国美容整形naviのYouTubeチャンネルまたはショート宣伝。動画の核心となる「気になる情報」を先出しして興味を引く。末尾にURL: https://www.youtube.com/@k_seikeinavi
 3. 【18:00 コラム宣伝】韓国美容整形naviのコラム記事宣伝。コラムの核心をちら見せして続きが読みたくなる構成。末尾にURL: https://kankoku-seikei-navi.com/column/
-4. 【21:00 日本相談会 or 体験談】日本相談会の魅力訴求か、相談に来た方の体験談。相談会URLは末尾に: https://kankoku-seikei-navi.com/event/
+4. 【21:00 問いかけ系 or 相談会体験談】「あなたはどっち？」「コメントで教えて」系の双方向投稿、または相談会に参加した方の体験談。相談会の場合は末尾にURL: https://kankoku-seikei-navi.com/event/ 問いかけ系の場合はURLなし。
+
+【重要な改善ポイント】
+・体験談系はENG率が最も高い（1.4%）ので、感情に訴えるリアルなストーリーを重視
+・問いかけ系はIMP最高（191）なので、選択肢を明確にして回答しやすくする
+・コピペ感のある告知文は避ける。毎回新鮮な切り口で
 
 全投稿の末尾にハッシュタグを付けてください: #韓国整形 #渡韓整形 #韓国美容整形navi ＋内容に合ったタグ1〜2個（#輪郭整形 #輪郭3点 #鼻整形 #両顎手術 #小顔整形 #韓国美容 など）
 
@@ -171,10 +176,10 @@ def generate_day_posts(day_number, real_reports=None):
 JSON配列のみ出力。説明不要。
 
 [
-  {{"time": "10:00", "type": "engagement_list", "text": "投稿本文"}},
+  {{"time": "10:00", "type": "engagement_story", "text": "投稿本文"}},
   {{"time": "12:30", "type": "youtube", "text": "投稿本文"}},
   {{"time": "18:00", "type": "column", "text": "投稿本文"}},
-  {{"time": "21:00", "type": "event_story", "text": "投稿本文"}}
+  {{"time": "21:00", "type": "engagement_question", "text": "投稿本文"}}
 ]"""
 
     result = call_anthropic(system, user)
