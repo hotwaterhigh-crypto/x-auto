@@ -2,20 +2,17 @@ name: Auto Post to X
 
 on:
   schedule:
-    # JST 10:00 = UTC 01:00
-    - cron: '50 0 * * *'
-    # JST 12:30 = UTC 03:30
-    - cron: '20 3 * * *'
-    # JST 15:00 = UTC 06:00
-    - cron: '50 5 * * *'
-    # JST 18:00 = UTC 09:00
-    - cron: '50 8 * * *'
-    # JST 21:00 = UTC 12:00
-    - cron: '50 11 * * *'
+    # 1日3投稿、2〜3時間間隔
+    # JST 08:00 = UTC 23:00 (前日)
+    - cron: '50 22 * * *'
+    # JST 11:00 = UTC 02:00
+    - cron: '50 1 * * *'
+    # JST 14:00 = UTC 05:00
+    - cron: '50 4 * * *'
   workflow_dispatch:
     inputs:
       time_slot:
-        description: '投稿時間帯 (例: 10:00, 12:30)'
+        description: '投稿時間帯 (例: 08:00, 11:00, 14:00)'
         required: false
 
 permissions:
@@ -33,7 +30,7 @@ jobs:
           python-version: '3.13'
 
       - name: Install dependencies
-        run: pip install tweepy requests
+        run: pip install tweepy requests Pillow
 
       - name: Run auto post
         env:
@@ -49,6 +46,18 @@ jobs:
           else
             python auto_post.py
           fi
+
+      - name: Self-reply after 30 min
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TZ: Asia/Tokyo
+        run: |
+          sleep 1800
+          python self_reply.py
 
       - name: Commit queue updates
         run: |
