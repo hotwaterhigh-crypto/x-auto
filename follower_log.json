@@ -1,6 +1,22 @@
 [
-  {"date": "2026-05-14", "followers": 3930},
-  {"date": "2026-05-15", "followers": 3929},
-  {"date": "2026-05-16", "followers": 3925},
-  {"date": "2026-05-17", "followers": 3920}
+  {
+    "date": "2026-05-14",
+    "followers": 3930
+  },
+  {
+    "date": "2026-05-15",
+    "followers": 3929
+  },
+  {
+    "date": "2026-05-16",
+    "followers": 3925
+  },
+  {
+    "date": "2026-05-17",
+    "followers": 3920
+  },
+  {
+    "date": "2026-05-18",
+    "followers": 3919
+  }
 ]
