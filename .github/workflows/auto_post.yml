@@ -47,18 +47,6 @@ jobs:
             python auto_post.py
           fi
 
-      - name: Self-reply after 30 min
-        env:
-          X_API_KEY: ${{ secrets.X_API_KEY }}
-          X_API_SECRET: ${{ secrets.X_API_SECRET }}
-          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
-          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          TZ: Asia/Tokyo
-        run: |
-          sleep 1800
-          python self_reply.py
-
       - name: Commit queue updates
         run: |
           git config user.name "github-actions[bot]"
