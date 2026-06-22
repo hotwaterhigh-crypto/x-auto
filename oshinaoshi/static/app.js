@@ -183,15 +183,23 @@ async function loadWorker() {
   loadMyJobs();
 }
 
-$("#worker-select").onchange = async (e) => {
-  if (e.target.value === "__new") {
-    const name = prompt("職人の名前を入力してください");
-    if (name && name.trim()) {
-      const { id } = await api("/api/craftsmen", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
-      await loadWorker();
-      $("#worker-select").value = id;
-    } else { await loadWorker(); }
+async function addCraftsman() {
+  const name = prompt("職人の名前を入力してください");
+  if (!name || !name.trim()) return;
+  const res = await api("/api/craftsmen", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+  if (res.error) { alert(res.error); return; }
+  await loadWorker();
+  if (res.id) {
+    $("#worker-select").value = res.id;
+    localStorage.setItem("worker_id", res.id);
   }
+  loadMyJobs();
+}
+
+$("#add-worker").onclick = addCraftsman;
+
+$("#worker-select").onchange = async (e) => {
+  if (e.target.value === "__new") { await addCraftsman(); return; }
   localStorage.setItem("worker_id", $("#worker-select").value);
   loadMyJobs();
 };
