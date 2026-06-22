@@ -3,3 +3,5 @@ images/
 __pycache__/
 reports/
 config_local.py
+oshinaoshi/data.db
+oshinaoshi/backups/

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>お直し 仕事量管理</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+  <header>
+    <h1>🧵 お直し 仕事量管理</h1>
+    <nav>
+      <button class="tab active" data-view="dashboard">📊 ダッシュボード</button>
+      <button class="tab" data-view="worker">🙋 職人モード</button>
+      <button class="tab" data-view="settings">⚙️ シフト設定</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ===== ダッシュボード ===== -->
+    <section id="view-dashboard" class="view">
+      <div id="totals" class="totals"></div>
+
+      <div class="card">
+        <h2>📥 今日の動き <span id="activity-date" class="sub-inline"></span></h2>
+        <div class="activity-grid">
+          <div>
+            <div class="act-head new">新しく来た仕事</div>
+            <div id="act-new"></div>
+          </div>
+          <div>
+            <div class="act-head done">今日 終わった仕事</div>
+            <div id="act-done"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🗓 空き予測（シフト反映）</h2>
+        <div id="forecast"></div>
+      </div>
+
+      <div class="card chart-card">
+        <h2>職人ごとの仕事量</h2>
+        <div class="chart-toggle">
+          <button class="seg active" data-metric="active_count">件数</button>
+          <button class="seg" data-metric="active_hours">工数(時間)</button>
+        </div>
+        <div class="chart-wrap"><canvas id="chart"></canvas></div>
+      </div>
+      <div id="craftsman-cards" class="craftsman-cards"></div>
+      <div class="card">
+        <h2>⚠️ 納期アラート</h2>
+        <div id="alerts"></div>
+      </div>
+    </section>
+
+    <!-- ===== 職人モード ===== -->
+    <section id="view-worker" class="view hidden">
+      <div class="card">
+        <label class="field">
+          <span>あなたの名前</span>
+          <select id="worker-select"></select>
+        </label>
+      </div>
+
+      <div class="card">
+        <h2>＋ 案件を追加</h2>
+        <form id="job-form" class="job-form">
+          <div class="row">
+            <label class="field"><span>区分</span>
+              <select name="gender" class="js-gender"></select></label>
+            <label class="field"><span>種類</span>
+              <select name="garment" class="js-garment"></select></label>
+          </div>
+          <label class="field"><span>直しの内容 <em>必須</em></span>
+            <input name="item" list="item-menu-worker" placeholder="選ぶ or 手入力（例: 裾上げ）" required autocomplete="off">
+            <datalist class="js-item-menu" id="item-menu-worker"></datalist></label>
+          <label class="field"><span>店舗名</span>
+            <input name="store_name" list="store-menu-worker" placeholder="選ぶ or 手入力" autocomplete="off">
+            <datalist class="js-store-list" id="store-menu-worker"></datalist></label>
+          <label class="field"><span>お客様名</span>
+            <input name="customer_name" placeholder="例: 田中様" autocomplete="off">
+            <div class="name-picker">
+              <button type="button" class="np-toggle">🇯🇵 よくある名字から選ぶ ▾</button>
+              <div class="np-panel" hidden>
+                <div class="np-kana"></div>
+                <div class="np-names"></div>
+              </div>
+            </div></label>
+          <div class="row">
+            <label class="field"><span>納期</span>
+              <input name="due_date" type="date"></label>
+            <label class="field"><span>見積工数(時間)</span>
+              <input name="est_hours" type="number" step="0.5" min="0" placeholder="1.5"></label>
+          </div>
+          <div class="row">
+            <label class="field"><span>金額(円)</span>
+              <input name="price" type="number" min="0" placeholder="3000"></label>
+            <label class="field"><span>状態</span>
+              <select name="status">
+                <option>未着手</option><option>作業中</option><option>完了</option>
+              </select></label>
+          </div>
+          <label class="field"><span>優先度</span>
+            <select name="priority">
+              <option value="2" selected>中（ふつう）</option>
+              <option value="1">高（急ぎ・先にやる）</option>
+              <option value="3">低（後回しでOK）</option>
+            </select></label>
+          <label class="field"><span>メモ</span>
+            <input name="note" placeholder="生地が薄い等"></label>
+          <button type="submit" class="primary">追加する</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>あなたの案件</h2>
+        <div id="my-jobs"></div>
+      </div>
+    </section>
+
+    <!-- ===== シフト設定 ===== -->
+    <section id="view-settings" class="view hidden">
+      <div class="card">
+        <h2>⚙️ シフト設定</h2>
+        <p class="hint">職人ごとに、曜日別の稼働時間(h)を入れてください。<br>
+          これを元に「いつまで埋まっているか／次に空くのはいつか」を予測します。休みの曜日は <strong>0</strong> に。</p>
+        <div id="shift-editor"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/options.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

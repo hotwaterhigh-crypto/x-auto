@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>職人ページ</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1 id="title">🧵 職人ページ</h1>
+    <nav>
+      <a class="tab" href="/">← ダッシュボードへ</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- 空き状況 -->
+    <div class="card collapsible" data-key="status" id="status-card">
+      <div class="card-head"><h2>🗓 あなたの空き状況</h2><button type="button" class="collapse-btn">隠す</button></div>
+      <div class="card-body"><div id="status"></div></div>
+    </div>
+
+    <!-- 日ごとの作業予定 -->
+    <div class="card collapsible" data-key="schedule">
+      <div class="card-head"><h2>📋 日ごとの作業予定</h2><button type="button" class="collapse-btn">隠す</button></div>
+      <div class="card-body">
+        <p class="hint">進行中の案件を、納期の早い順にシフトへ自動で割り当てた予定です。
+          <span class="badge over">⚠ 納期超過</span> は今のペースだと間に合わない案件です。</p>
+        <div id="schedule"></div>
+      </div>
+    </div>
+
+    <!-- 案件カレンダー（納期ベース） -->
+    <div class="card collapsible" data-key="jobcal">
+      <div class="card-head"><h2>📅 案件カレンダー</h2><button type="button" class="collapse-btn">隠す</button></div>
+      <div class="card-body">
+        <div class="cal-head">
+          <button class="mini" id="jc-prev">‹ 前の月</button>
+          <div class="cal-month" id="jc-title">　</div>
+          <button class="mini" id="jc-next">次の月 ›</button>
+        </div>
+        <p class="hint">抱えている案件を <strong>納期の日</strong> に置いたカレンダーです。
+          色は優先度（<span class="badge p-hi">高</span><span class="badge p-mid">中</span><span class="badge p-lo">低</span>）、
+          枠が赤い案件は納期超過です。</p>
+        <div class="cal-grid" id="job-calendar"></div>
+      </div>
+    </div>
+
+    <!-- 月間シフト -->
+    <div class="card collapsible" data-key="shift">
+      <div class="card-head"><h2>🗓 月間シフト</h2><button type="button" class="collapse-btn">隠す</button></div>
+      <div class="card-body">
+        <div class="cal-head">
+          <button class="mini" id="prev">‹ 前の月</button>
+          <div class="cal-month" id="cal-title">　</div>
+          <button class="mini" id="next">次の月 ›</button>
+        </div>
+        <p class="hint">日付の数字を直接編集すると、その日の稼働時間が変わります（休みは <strong>0</strong>）。
+          色つきの日は通常の曜日パターンから変更した日です。<span id="cal-total"></span></p>
+        <button class="mini copy-week" id="copy-week">📋 1週目の時間を、この月の残りにコピー</button>
+        <div class="cal-grid" id="calendar"></div>
+      </div>
+    </div>
+
+    <!-- 案件追加 -->
+    <div class="card collapsible" data-key="addjob">
+      <div class="card-head"><h2>＋ 案件を追加</h2><button type="button" class="collapse-btn">隠す</button></div>
+      <div class="card-body">
+      <form id="job-form" class="job-form">
+        <div class="row">
+          <label class="field"><span>区分</span>
+            <select name="gender" class="js-gender"></select></label>
+          <label class="field"><span>種類</span>
+            <select name="garment" class="js-garment"></select></label>
+        </div>
+        <label class="field"><span>直しの内容 <em>必須</em></span>
+          <input name="item" list="item-menu-c" placeholder="選ぶ or 手入力（例: 裾上げ）" required autocomplete="off">
+          <datalist class="js-item-menu" id="item-menu-c"></datalist></label>
+        <label class="field"><span>店舗名</span>
+          <input name="store_name" list="store-menu-c" placeholder="選ぶ or 手入力" autocomplete="off">
+          <datalist class="js-store-list" id="store-menu-c"></datalist></label>
+        <label class="field"><span>お客様名</span>
+          <input name="customer_name" placeholder="例: 田中様" autocomplete="off">
+          <div class="name-picker">
+            <button type="button" class="np-toggle">🇯🇵 よくある名字から選ぶ ▾</button>
+            <div class="np-panel" hidden>
+              <div class="np-kana"></div>
+              <div class="np-names"></div>
+            </div>
+          </div></label>
+        <div class="row">
+          <label class="field"><span>納期</span><input name="due_date" type="date"></label>
+          <label class="field"><span>見積工数(時間)</span>
+            <input name="est_hours" type="number" step="0.5" min="0" placeholder="1.5"></label>
+        </div>
+        <div class="row">
+          <label class="field"><span>金額(円)</span>
+            <input name="price" type="number" min="0" placeholder="3000"></label>
+          <label class="field"><span>状態</span>
+            <select name="status"><option>未着手</option><option>作業中</option><option>完了</option></select></label>
+        </div>
+        <label class="field"><span>優先度</span>
+          <select name="priority">
+            <option value="2" selected>中（ふつう）</option>
+            <option value="1">高（急ぎ・先にやる）</option>
+            <option value="3">低（後回しでOK）</option>
+          </select></label>
+        <button type="submit" class="primary">追加する</button>
+      </form>
+      </div>
+    </div>
+
+    <!-- 案件一覧 -->
+    <div class="card collapsible" data-key="jobs">
+      <div class="card-head"><h2>抱えている案件</h2><button type="button" class="collapse-btn">隠す</button></div>
+      <div class="card-body"><div id="jobs"></div></div>
+    </div>
+  </main>
+
+  <script src="/static/options.js"></script>
+  <script src="/static/craftsman.js"></script>
+</body>
+</html>

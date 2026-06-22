@@ -1,0 +1,22 @@
+# Render Blueprint — お直し仕事量管理アプリ
+# Render の「New +」→「Blueprint」でこのリポジトリを選ぶと、この設定で作成されます。
+services:
+  - type: web
+    name: oshinaoshi
+    runtime: python
+    rootDir: oshinaoshi
+    plan: starter            # 永続ディスクのため Starter(約$7/月)
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 60
+    healthCheckPath: /healthz
+    disk:
+      name: data
+      mountPath: /var/data   # SQLite と日次バックアップをここに永続保存
+      sizeGB: 1
+    envVars:
+      - key: DATA_DIR
+        value: /var/data
+      - key: SECRET_KEY
+        generateValue: true  # Renderが自動生成（ログイン用）
+      - key: APP_PASSCODE
+        sync: false          # スタッフ共有の合言葉。ダッシュボードで設定
