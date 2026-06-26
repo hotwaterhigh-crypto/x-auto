@@ -194,6 +194,19 @@ button.mini:disabled{opacity:.35;cursor:default}
 .card.collapsed .card-body{display:none}
 .cal-month{font-weight:700;font-size:16px}
 .done-at{font-size:11px;color:var(--ok);font-weight:700;white-space:nowrap}
+.badge.todo{background:#fcefd9;color:#d98324;font-weight:700}
+
+/* 編集モーダル */
+.modal-overlay{position:fixed;inset:0;background:rgba(40,33,28,.45);z-index:100;
+  display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow-y:auto}
+.modal-overlay[hidden]{display:none}
+.modal{background:var(--card);border-radius:14px;padding:18px;width:100%;max-width:460px;
+  box-shadow:0 8px 30px rgba(40,33,28,.25)}
+.modal h2{margin:0 0 14px;font-size:17px}
+.modal .field em{color:var(--accent-d);font-style:normal;font-size:11px}
+.modal-btns{display:flex;gap:10px;margin-top:6px}
+.modal-btns .mini{flex:0 0 auto;padding:13px 18px;font-size:14px}
+.modal-btns .primary{flex:1}
 
 /* フォーム */
 .field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;font-size:13px}

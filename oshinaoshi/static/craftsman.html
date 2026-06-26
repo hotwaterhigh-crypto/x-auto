@@ -92,8 +92,9 @@
         <div class="row">
           <label class="field"><span>納期</span><input name="due_date" type="date"></label>
           <label class="field"><span>見積工数(時間)</span>
-            <input name="est_hours" type="number" step="0.5" min="0" placeholder="1.5"></label>
+            <input name="est_hours" type="number" step="0.5" min="0" placeholder="未定なら空欄"></label>
         </div>
+        <p class="hint">💡 工数・金額が分からなければ<strong>空欄のまま保存</strong>でOK。後から「編集」ボタンで直せます。</p>
         <div class="row">
           <label class="field"><span>金額(円)</span>
             <input name="price" type="number" min="0" placeholder="3000"></label>
@@ -119,6 +120,7 @@
   </main>
 
   <script src="/static/options.js"></script>
+  <script src="/static/jobedit.js"></script>
   <script src="/static/craftsman.js"></script>
 </body>
 </html>

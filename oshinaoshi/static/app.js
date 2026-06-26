@@ -233,16 +233,22 @@ async function loadMyJobs() {
         <div class="ttl">${prioBadge(j.priority)} ${esc(j.garment ? j.garment + " " : "")}${esc(j.item)}
           <span class="badge s${j.status}">${j.status}</span>
           ${late ? `<span class="badge over">超過</span>` : ""}
+          ${j.status !== "完了" && !j.est_hours ? `<span class="badge todo">工数未定</span>` : ""}
           ${j.status === "完了" && j.completed_at ? `<span class="done-at">✓ ${fmtDateTime(j.completed_at)} 完了</span>` : ""}</div>
-        <div class="sub">${j.store_name ? "🏠" + esc(j.store_name) + " " : ""}${j.gender ? esc(j.gender) + "・" : ""}${esc(j.customer_name || "")}${j.due_date ? " ・納期 " + fmtDate(j.due_date) : ""}${j.est_hours ? " ・" + j.est_hours + "h" : ""}</div>
+        <div class="sub">${j.store_name ? "🏠" + esc(j.store_name) + " " : ""}${j.gender ? esc(j.gender) + "・" : ""}${esc(j.customer_name || "")}${j.due_date ? " ・納期 " + fmtDate(j.due_date) : ""}${j.est_hours ? " ・" + j.est_hours + "h" : ""}${j.price ? " ・¥" + j.price : ""}</div>
       </div>
       <div class="statusbtns">
+        <button class="mini" data-edit="${j.id}">編集</button>
         ${prioSelect(j.id, j.priority)}
         ${moveSelect(j.id, cid)}
         ${next ? `<button class="mini" data-adv="${j.id}" data-to="${next}">${next}へ</button>` : ""}
         <button class="mini del" data-del="${j.id}">削除</button>
       </div>`;
     box.appendChild(row);
+  });
+  box.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => {
+    const job = jobs.find(j => j.id == b.dataset.edit);
+    if (job) window.openJobEditor(job, loadMyJobs);
   });
   box.querySelectorAll(".prio-sel").forEach(s => s.onchange = async () => {
     await api("/api/jobs/" + s.dataset.prio, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ priority: +s.value }) });
